@@ -1,7 +1,6 @@
 const express = require('express');
 const { Server } = require('socket.io');
 const http = require('http');
-const path = require('path');
 
 const app = express();
 const server = http.createServer(app);
@@ -70,7 +69,6 @@ io.on('connection', (socket) => {
     });
 });
 
-// Serve the game HTML
 app.get('/', (req, res) => {
     res.send(`<!DOCTYPE html>
 <html lang="en">
@@ -80,7 +78,7 @@ app.get('/', (req, res) => {
     <title>Office Battle Royale</title>
     <script src="/socket.io/socket.io.js"></script>
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; touch-action: none; }
+        * { margin: 0; padding: 0; box-sizing: border-box; touch-action: none; -webkit-touch-callout: none; }
         body { overflow: hidden; background: #1a1a1a; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; position: fixed; width: 100%; height: 100%; }
         #gameCanvas { width: 100%; height: 100%; display: block; }
         .screen { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%); display: flex; flex-direction: column; justify-content: center; align-items: center; color: white; z-index: 100; padding: 20px; }
@@ -93,7 +91,7 @@ app.get('/', (req, res) => {
         button:active { transform: scale(0.95); }
         .color-selection { display: flex; gap: 10px; margin: 15px 0; flex-wrap: wrap; justify-content: center; }
         .color-btn { width: 50px; height: 50px; border-radius: 50%; border: 3px solid transparent; cursor: pointer; }
-        .color-btn.selected { border-color: white; transform: scale(1.2); }
+        .color-btn.selected { border-color: white; transform: scale(1.2); box-shadow: 0 0 10px rgba(255,255,255,0.5); }
         .instructions { background: rgba(0,0,0,0.3); padding: 15px; border-radius: 15px; margin-top: 20px; font-size: 0.9rem; line-height: 1.4; max-width: 400px; text-align: center; }
         #hud { position: absolute; top: 10px; left: 10px; right: 10px; display: flex; justify-content: space-around; flex-wrap: wrap; pointer-events: none; z-index: 40; gap: 5px; }
         .player-card { background: rgba(0,0,0,0.6); padding: 8px 12px; border-radius: 20px; font-size: 12px; display: flex; align-items: center; gap: 8px; border: 2px solid; }
@@ -103,10 +101,10 @@ app.get('/', (req, res) => {
         #touch-controls { position: absolute; bottom: 0; left: 0; width: 100%; height: 220px; pointer-events: none; z-index: 50; display: none; }
         .joystick-zone { position: absolute; width: 140px; height: 140px; background: rgba(255,255,255,0.15); border: 2px solid rgba(255,255,255,0.3); border-radius: 50%; pointer-events: auto; }
         #joystick-move { left: 20px; bottom: 20px; }
-        .joystick-knob { position: absolute; width: 50px; height: 50px; background: rgba(255,255,255,0.9); border-radius: 50%; top: 50%; left: 50%; transform: translate(-50%, -50%); }
-        #throw-btn { position: absolute; right: 40px; bottom: 40px; width: 100px; height: 100px; border-radius: 50%; background: linear-gradient(135deg, #ff4444, #cc0000); border: 3px solid white; pointer-events: auto; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 14px; text-align: center; user-select: none; }
+        .joystick-knob { position: absolute; width: 50px; height: 50px; background: rgba(255,255,255,0.9); border-radius: 50%; top: 50%; left: 50%; margin-left: -25px; margin-top: -25px; box-shadow: 0 2px 10px rgba(0,0,0,0.3); }
+        #throw-btn { position: absolute; right: 30px; bottom: 30px; width: 100px; height: 100px; border-radius: 50%; background: linear-gradient(135deg, #ff4444, #cc0000); border: 3px solid white; pointer-events: auto; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 14px; text-align: center; user-select: none; color: white; }
         #throw-btn.charging { background: linear-gradient(135deg, #ffff44, #ffaa00); color: black; transform: scale(1.1); }
-        #game-status { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: rgba(0,0,0,0.8); padding: 20px; border-radius: 15px; font-size: 24px; font-weight: bold; z-index: 60; display: none; text-align: center; }
+        #game-status { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: rgba(0,0,0,0.8); padding: 20px; border-radius: 15px; font-size: 24px; font-weight: bold; z-index: 60; display: none; text-align: center; color: white; }
     </style>
 </head>
 <body>
@@ -177,7 +175,9 @@ app.get('/', (req, res) => {
             roomId = (document.getElementById('roomCode').value || 'default').toUpperCase();
             document.getElementById('menu').classList.add('hidden');
             document.getElementById('hud').classList.remove('hidden');
-            if ('ontouchstart' in window) document.getElementById('touch-controls').style.display = 'block';
+            if ('ontouchstart' in window || navigator.maxTouchPoints > 0) {
+                document.getElementById('touch-controls').style.display = 'block';
+            }
             initConnection(name);
         };
 
@@ -284,7 +284,8 @@ app.get('/', (req, res) => {
             const canvas = document.createElement('canvas');
             canvas.width = 256; canvas.height = 64;
             const ctx = canvas.getContext('2d');
-            ctx.fillStyle = 'rgba(0,0,0,0.7)'; ctx.fillRect(0,0,256,64);
+            ctx.fillStyle = 'rgba(0,0,0,0.7)'; 
+            ctx.fillRect(0,0,256,64);
             ctx.fillStyle = 'white'; ctx.font = 'bold 40px Arial'; ctx.textAlign = 'center';
             ctx.fillText('You', 128, 45);
             const tex = new THREE.CanvasTexture(canvas);
@@ -311,7 +312,8 @@ app.get('/', (req, res) => {
             const canvas = document.createElement('canvas');
             canvas.width = 256; canvas.height = 64;
             const ctx = canvas.getContext('2d');
-            ctx.fillStyle = 'rgba(0,0,0,0.7)'; ctx.fillRect(0,0,256,64);
+            ctx.fillStyle = 'rgba(0,0,0,0.7)'; 
+            ctx.fillRect(0,0,256,64);
             ctx.fillStyle = 'white'; ctx.font = 'bold 40px Arial'; ctx.textAlign = 'center';
             ctx.fillText(data.name, 128, 45);
             const tex = new THREE.CanvasTexture(canvas);
@@ -371,20 +373,162 @@ app.get('/', (req, res) => {
             const moveZone = document.getElementById('joystick-move');
             const moveKnob = document.getElementById('knob-move');
             const throwBtn = document.getElementById('throw-btn');
-            let moveActive = false, moveCenter = {x:0, y:0};
+            let moveActive = false;
+            let moveStartX = 0, moveStartY = 0;
+            let currentTouchId = null;
             
-            moveZone.addEventListener('touchstart', (e) => { e.preventDefault(); moveActive = true; const touch = e.touches[0]; const rect = moveZone.getBoundingClientRect(); moveCenter = { x: rect.left + 70, y: rect.top + 70 }; }, {passive: false});
-            moveZone.addEventListener('touchmove', (e) => { e.preventDefault(); if (!moveActive) return; const touch = e.touches[0]; let dx = touch.clientX - moveCenter.x; let dy = touch.clientY - moveCenter.y; const dist = Math.sqrt(dx*dx + dy*dy); const max = 40; if (dist > max) { dx = (dx/dist) * max; dy = (dy/dist) * max; } moveKnob.style.transform = \`translate(calc(-50% + \${dx}px), calc(-50% + \${dy}px))\`; input.move.x = dx / max; input.move.y = dy / max; }, {passive: false});
-            moveZone.addEventListener('touchend', () => { moveActive = false; moveKnob.style.transform = 'translate(-50%, -50%)'; input.move.x = 0; input.move.y = 0; });
+            // Movement joystick with corrected touch handling
+            moveZone.addEventListener('touchstart', function(e) {
+                e.preventDefault();
+                if (moveActive) return;
+                moveActive = true;
+                const touch = e.changedTouches[0];
+                currentTouchId = touch.identifier;
+                const rect = moveZone.getBoundingClientRect();
+                moveStartX = rect.left + rect.width/2;
+                moveStartY = rect.top + rect.height/2;
+                updateJoystick(touch.clientX, touch.clientY);
+            }, {passive: false});
             
-            document.addEventListener('touchmove', (e) => { const touch = e.touches[0]; if (touch.clientX > window.innerWidth / 2) { const centerX = window.innerWidth * 0.75; const centerY = window.innerHeight - 90; input.aim.x = (touch.clientX - centerX) / 100; input.aim.y = -(touch.clientY - centerY) / 100; const len = Math.sqrt(input.aim.x**2 + input.aim.y**2); if (len > 1) { input.aim.x /= len; input.aim.y /= len; } } }, {passive: false});
+            moveZone.addEventListener('touchmove', function(e) {
+                e.preventDefault();
+                if (!moveActive) return;
+                for (let i = 0; i < e.changedTouches.length; i++) {
+                    if (e.changedTouches[i].identifier === currentTouchId) {
+                        updateJoystick(e.changedTouches[i].clientX, e.changedTouches[i].clientY);
+                        break;
+                    }
+                }
+            }, {passive: false});
             
-            throwBtn.addEventListener('touchstart', (e) => { e.preventDefault(); input.charging = true; throwBtn.classList.add('charging'); throwBtn.innerHTML = 'CHARGING...'; }, {passive: false});
-            throwBtn.addEventListener('touchend', (e) => { e.preventDefault(); if (input.charging) { throwWeapon(); input.charging = false; throwBtn.classList.remove('charging'); throwBtn.innerHTML = 'HOLD TO<br>THROW'; } });
+            function updateJoystick(clientX, clientY) {
+                let dx = clientX - moveStartX;
+                let dy = clientY - moveStartY;
+                const distance = Math.sqrt(dx*dx + dy*dy);
+                const maxDist = 45;
+                
+                if (distance > maxDist) {
+                    dx = (dx/distance) * maxDist;
+                    dy = (dy/distance) * maxDist;
+                }
+                
+                // Use margin instead of transform for better compatibility
+                moveKnob.style.marginLeft = (-25 + dx) + 'px';
+                moveKnob.style.marginTop = (-25 + dy) + 'px';
+                
+                // Normalize input -1 to 1
+                input.move.x = dx / maxDist;
+                // Invert Y because screen Y is down but game Z forward is up
+                input.move.y = -(dy / maxDist); 
+            }
             
-            document.addEventListener('keydown', (e) => { const key = e.key.toLowerCase(); const speed = 0.8; if (key === 'w' || key === 'arrowup') input.move.y = -speed; if (key === 's' || key === 'arrowdown') input.move.y = speed; if (key === 'a' || key === 'arrowleft') input.move.x = -speed; if (key === 'd' || key === 'arrowright') input.move.x = speed; if (key === ' ' && !input.charging) input.charging = true; });
-            document.addEventListener('keyup', (e) => { const key = e.key.toLowerCase(); if (['w','s','arrowup','arrowdown'].includes(key)) input.move.y = 0; if (['a','d','arrowleft','arrowright'].includes(key)) input.move.x = 0; if (key === ' ' && input.charging) { throwWeapon(); input.charging = false; } });
-            document.addEventListener('mousemove', (e) => { if (!localPlayer) return; const rect = renderer.domElement.getBoundingClientRect(); const centerX = rect.left + rect.width/2; const centerY = rect.top + rect.height/2; input.aim.x = (e.clientX - centerX) / 200; input.aim.y = -(e.clientY - centerY) / 200; const len = Math.sqrt(input.aim.x**2 + input.aim.y**2); if (len > 1) { input.aim.x /= len; input.aim.y /= len; } });
+            moveZone.addEventListener('touchend', function(e) {
+                for (let i = 0; i < e.changedTouches.length; i++) {
+                    if (e.changedTouches[i].identifier === currentTouchId) {
+                        moveActive = false;
+                        currentTouchId = null;
+                        moveKnob.style.marginLeft = '-25px';
+                        moveKnob.style.marginTop = '-25px';
+                        input.move.x = 0;
+                        input.move.y = 0;
+                        break;
+                    }
+                }
+            }, {passive: false});
+            
+            moveZone.addEventListener('touchcancel', function(e) {
+                moveActive = false;
+                currentTouchId = null;
+                moveKnob.style.marginLeft = '-25px';
+                moveKnob.style.marginTop = '-25px';
+                input.move.x = 0;
+                input.move.y = 0;
+            }, {passive: false});
+            
+            // Right side aim control
+            const gameCanvas = document.getElementById('gameCanvas');
+            gameCanvas.addEventListener('touchstart', function(e) {
+                const touch = e.touches[0];
+                if (touch.clientX > window.innerWidth / 2) {
+                    updateAim(touch.clientX, touch.clientY);
+                }
+            }, {passive: false});
+            
+            gameCanvas.addEventListener('touchmove', function(e) {
+                for (let i = 0; i < e.touches.length; i++) {
+                    if (e.touches[i].clientX > window.innerWidth / 2) {
+                        updateAim(e.touches[i].clientX, e.touches[i].clientY);
+                    }
+                }
+            }, {passive: false});
+            
+            function updateAim(clientX, clientY) {
+                const centerX = window.innerWidth * 0.75;
+                const centerY = window.innerHeight - 100;
+                input.aim.x = (clientX - centerX) / 100;
+                input.aim.y = (clientY - centerY) / 100;
+                const len = Math.sqrt(input.aim.x*input.aim.x + input.aim.y*input.aim.y);
+                if (len > 1) {
+                    input.aim.x /= len;
+                    input.aim.y /= len;
+                }
+            }
+            
+            // Throw button
+            throwBtn.addEventListener('touchstart', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                input.charging = true;
+                throwBtn.classList.add('charging');
+                throwBtn.innerHTML = 'CHARGING...';
+            }, {passive: false});
+            
+            throwBtn.addEventListener('touchend', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                if (input.charging) {
+                    throwWeapon();
+                    input.charging = false;
+                    throwBtn.classList.remove('charging');
+                    throwBtn.innerHTML = 'HOLD TO<br>THROW';
+                }
+            }, {passive: false});
+            
+            // Keyboard fallback
+            document.addEventListener('keydown', (e) => {
+                const key = e.key.toLowerCase();
+                const speed = 0.8;
+                if (key === 'w' || key === 'arrowup') input.move.y = -speed;
+                if (key === 's' || key === 'arrowdown') input.move.y = speed;
+                if (key === 'a' || key === 'arrowleft') input.move.x = -speed;
+                if (key === 'd' || key === 'arrowright') input.move.x = speed;
+                if (key === ' ' && !input.charging) input.charging = true;
+            });
+            
+            document.addEventListener('keyup', (e) => {
+                const key = e.key.toLowerCase();
+                if (['w','s','arrowup','arrowdown'].includes(key)) input.move.y = 0;
+                if (['a','d','arrowleft','arrowright'].includes(key)) input.move.x = 0;
+                if (key === ' ' && input.charging) {
+                    throwWeapon();
+                    input.charging = false;
+                }
+            });
+            
+            document.addEventListener('mousemove', (e) => {
+                if (!localPlayer) return;
+                const rect = renderer.domElement.getBoundingClientRect();
+                const centerX = rect.left + rect.width/2;
+                const centerY = rect.top + rect.height/2;
+                input.aim.x = (e.clientX - centerX) / 200;
+                input.aim.y = (e.clientY - centerY) / 200;
+                const len = Math.sqrt(input.aim.x**2 + input.aim.y**2);
+                if (len > 1) {
+                    input.aim.x /= len;
+                    input.aim.y /= len;
+                }
+            });
+            
             document.addEventListener('mousedown', () => { if (!input.charging) input.charging = true; });
             document.addEventListener('mouseup', () => { if (input.charging) { throwWeapon(); input.charging = false; } });
         }
@@ -393,13 +537,17 @@ app.get('/', (req, res) => {
             const hud = document.getElementById('hud');
             hud.innerHTML = '';
             if (localPlayer) {
-                const div = document.createElement('div'); div.className = 'player-card local'; div.style.borderColor = '#' + playerColor.toString(16).padStart(6,'0');
-                div.innerHTML = \`<span>You</span><div class="health-bar"><div class="health-fill" style="width: \${localPlayer.health}%; background: #\${playerColor.toString(16).padStart(6,'0')}"></div></div>\`;
+                const div = document.createElement('div'); 
+                div.className = 'player-card local'; 
+                div.style.borderColor = '#' + playerColor.toString(16).padStart(6,'0');
+                div.innerHTML = '<span>You</span><div class="health-bar"><div class="health-fill" style="width: ' + localPlayer.health + '%; background: #' + playerColor.toString(16).padStart(6,'0') + '"></div></div>';
                 hud.appendChild(div);
             }
             remotePlayers.forEach(player => {
-                const div = document.createElement('div'); div.className = 'player-card'; div.style.borderColor = '#' + player.color.toString(16).padStart(6,'0');
-                div.innerHTML = \`<span>\${player.name}</span><div class="health-bar"><div class="health-fill" style="width: \${player.health}%; background: #\${player.color.toString(16).padStart(6,'0')}"></div></div>\`;
+                const div = document.createElement('div'); 
+                div.className = 'player-card'; 
+                div.style.borderColor = '#' + player.color.toString(16).padStart(6,'0');
+                div.innerHTML = '<span>' + player.name + '</span><div class="health-bar"><div class="health-fill" style="width: ' + player.health + '%; background: #' + player.color.toString(16).padStart(6,'0') + '"></div></div>';
                 hud.appendChild(div);
             });
         }
@@ -409,7 +557,13 @@ app.get('/', (req, res) => {
             status.innerHTML = '<div>☠️ ELIMINATED</div><div style="font-size: 16px; margin-top: 10px;">Respawning...</div>';
             status.style.display = 'block';
             localPlayer.mesh.visible = false;
-            setTimeout(() => { localPlayer.health = 100; localPlayer.body.position.set(0, 5, 0); localPlayer.mesh.visible = true; status.style.display = 'none'; updateHUD(); }, 2000);
+            setTimeout(() => { 
+                localPlayer.health = 100; 
+                localPlayer.body.position.set(0, 5, 0); 
+                localPlayer.mesh.visible = true; 
+                status.style.display = 'none'; 
+                updateHUD(); 
+            }, 2000);
         }
 
         function animate() {
@@ -420,10 +574,12 @@ app.get('/', (req, res) => {
             world.step(1/60, delta, 3);
             
             if (localPlayer && localPlayer.health > 0) {
+                // Apply movement force
                 const speed = 20;
                 const force = new CANNON.Vec3(input.move.x * speed, 0, input.move.y * speed);
                 localPlayer.body.applyForce(force, localPlayer.body.position);
                 
+                // Rotation
                 if (Math.abs(input.aim.x) > 0.1 || Math.abs(input.aim.y) > 0.1) {
                     const angle = Math.atan2(input.aim.x, input.aim.y);
                     const q = new CANNON.Quaternion();
@@ -436,14 +592,26 @@ app.get('/', (req, res) => {
                 localPlayer.mesh.position.copy(localPlayer.body.position);
                 localPlayer.mesh.quaternion.copy(localPlayer.body.quaternion);
                 
+                // Camera follow
                 const targetPos = localPlayer.mesh.position.clone();
-                targetPos.y += 12; targetPos.z += 8;
+                targetPos.y += 12; 
+                targetPos.z += 8;
                 camera.position.lerp(targetPos, 0.1);
                 camera.lookAt(localPlayer.mesh.position);
                 
-                if (Math.random() < 0.3) socket.emit('player-update', { x: localPlayer.body.position.x, y: localPlayer.body.position.y, z: localPlayer.body.position.z, rotation: Math.atan2(input.aim.x, input.aim.y), health: localPlayer.health });
+                // Network sync
+                if (Math.random() < 0.3) {
+                    socket.emit('player-update', { 
+                        x: localPlayer.body.position.x, 
+                        y: localPlayer.body.position.y, 
+                        z: localPlayer.body.position.z, 
+                        rotation: Math.atan2(input.aim.x, input.aim.y), 
+                        health: localPlayer.health 
+                    });
+                }
             }
             
+            // Interpolate remote players
             remotePlayers.forEach(player => {
                 if (player.targetPos) {
                     player.mesh.position.lerp(player.targetPos, 0.2);
@@ -456,19 +624,28 @@ app.get('/', (req, res) => {
                 }
             });
             
+            // Update projectiles
             for (let i = projectiles.length - 1; i >= 0; i--) {
                 const proj = projectiles[i];
                 proj.mesh.position.copy(proj.body.position);
                 proj.mesh.quaternion.copy(proj.body.quaternion);
                 if (Date.now() - proj.created > 8000 || proj.body.position.y < -10) {
-                    scene.remove(proj.mesh); world.removeBody(proj.body); projectiles.splice(i, 1);
+                    scene.remove(proj.mesh); 
+                    world.removeBody(proj.body); 
+                    projectiles.splice(i, 1);
                 }
             }
             
             renderer.render(scene, camera);
         }
 
-        window.addEventListener('resize', () => { if (camera && renderer) { camera.aspect = window.innerWidth / window.innerHeight; camera.updateProjectionMatrix(); renderer.setSize(window.innerWidth, window.innerHeight); } });
+        window.addEventListener('resize', () => { 
+            if (camera && renderer) { 
+                camera.aspect = window.innerWidth / window.innerHeight; 
+                camera.updateProjectionMatrix(); 
+                renderer.setSize(window.innerWidth, window.innerHeight); 
+            } 
+        });
     </script>
 </body>
 </html>`);
